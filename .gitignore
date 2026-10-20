@@ -1,0 +1,36 @@
+
+# --- added by Claude: keep secrets and junk out of GitHub ---
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+.DS_Store
+secrets/
+certs/
+backups/
+*.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
+*.ipa
+*.dmg
+*.zip
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+# --- end ---
+# project-specific
+app 2.py

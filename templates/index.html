@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticker Tycoon</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<div id="app">
+  <!-- ======================================================== top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="/static/logo.svg" alt="" class="brand-mark">
+      <span class="brand-name">Ticker <b>Tycoon</b></span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="trade" class="active">Trade</button>
+      <button data-tab="portfolio">Portfolio</button>
+      <button data-tab="bots">Bots</button>
+      <button data-tab="funds">Funds</button>
+      <button data-tab="learn">Learn</button>
+      <button data-tab="stats">Stats</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+    <div class="top-right">
+      <div class="mode-toggle" id="modeToggle" title="Real prices, real time">
+        <button data-mode="live" class="active"><span class="dot live"></span>Live</button>
+      </div>
+      <span class="pill" id="marketPill">Market</span>
+      <button class="icon-btn" id="newsBtn" title="News &amp; codes (N)">
+        <svg viewBox="0 0 24 24"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5zm13 4h3v8a2 2 0 0 1-2 2M7 9h7M7 13h7M7 16h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+      <button class="user-btn" id="userBtn" title="Your account"><span class="user-av" id="userAv">?</span><span id="userName"></span></button>
+      <button class="tour-btn" id="tourBtn" title="Guided tutorial (T)">&#127891; Tutorial</button>
+      <button class="icon-btn" id="helpBtn" title="Keyboard shortcuts (?)">?</button>
+    </div>
+  </header>
+
+  <!-- ======================================================== stats strip -->
+  <section class="strip">
+    <div class="kpi big"><label>Net worth</label><div id="kNet" class="num">$0.00</div><small id="kNetChg" class="num"></small></div>
+    <div class="kpi"><label>Cash</label><div id="kCash" class="num">$0.00</div></div>
+    <div class="kpi"><label>Open P&amp;L</label><div id="kUpnl" class="num">$0.00</div></div>
+    <div class="kpi"><label>Realized</label><div id="kReal" class="num">$0.00</div></div>
+    <div class="kpi"><label>Dividends</label><div id="kDiv" class="num">$0.00</div></div>
+    <div class="level-card" title="Earn XP from closed trades, lessons and quizzes">
+      <div class="level-badge" id="lvBadge">1</div>
+      <div class="level-info">
+        <div class="level-top"><span>Level <b id="lvNum">1</b></span><span id="lvXp" class="num muted">0 / 100 XP</span></div>
+        <div class="bar"><i id="lvBar"></i></div>
+        <small id="lvNext" class="muted">Next unlock: 2x leverage</small>
+      </div>
+    </div>
+  </section>
+  <div id="warnBar" class="warn-bar hidden"></div>
+  <div id="dataBar" class="data-bar hidden"></div>
+
+  <!-- ======================================================== TRADE -->
+  <main class="view active" id="view-trade">
+    <aside class="panel market-list">
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="searchInput" placeholder="Search 13k stocks/ETFs & 20k coins" autocomplete="off" spellcheck="false">
+        <kbd>/</kbd>
+      </div>
+      <div class="chips" id="chips">
+        <button data-f="all" class="active">All</button>
+        <button data-f="stocks">Stocks</button>
+        <button data-f="etfs">ETFs</button>
+        <button data-f="crypto">Crypto</button>
+        <button data-f="sector">Sector</button>
+        <button data-f="movers">Top movers</button>
+        <button data-f="watchlist">&#9733; Watchlist</button>
+      </div>
+      <select id="sectorSel" class="select hidden"></select>
+      <div class="list" id="resultList"></div>
+    </aside>
+
+    <section class="panel chart-panel">
+      <div class="asset-head">
+        <div class="asset-id">
+          <div class="avatar lg" id="aLogo"></div>
+          <div>
+            <div class="asset-title"><span id="aSym">-</span><button class="star" id="aStar" title="Add to watchlist">&#9734;</button><span class="tag" id="aKind"></span></div>
+            <div class="muted asset-name" id="aName"></div>
+          </div>
+        </div>
+        <div class="asset-price">
+          <div class="num price-big" id="aPrice">-</div>
+          <div class="num" id="aChg"></div>
+          <div class="live-tag" id="aLive"><span class="dot live"></span><span id="aLiveTxt">live</span></div>
+        </div>
+      </div>
+      <div class="chart-toolbar">
+        <div class="seg" id="tfSeg">
+          <button data-tf="1m">1m</button><button data-tf="5m">5m</button><button data-tf="1h">1h</button><button data-tf="1D" class="active">1D</button><button data-tf="1W">1W</button>
+        </div>
+        <span class="muted small" id="chartHint">Wheel: zoom &middot; drag: scroll/move lines</span>
+        <span class="pill small" id="aMarket"></span>
+      </div>
+      <div class="chart-wrap">
+        <div id="chart"></div>
+        <div id="chartNote" class="chart-note hidden"></div>
+        <div id="placeHint" class="place-hint hidden"></div>
+      </div>
+      <div class="ticker-positions" id="tickerPositions"></div>
+    </section>
+
+    <aside class="panel order-panel" id="orderPanel">
+      <h3>New trade</h3>
+      <div class="seg full" id="unitSeg"><button data-u="usd" class="active">$ Amount</button><button data-u="qty">Shares</button></div>
+      <div class="field">
+        <label id="amtLabel">Amount (USD)</label>
+        <input id="amtInput" type="number" min="0" step="any" placeholder="1000" class="num">
+      </div>
+      <div class="pct-row" id="pctRow"><button data-p="25">25%</button><button data-p="50">50%</button><button data-p="75">75%</button><button data-p="100">100%</button></div>
+      <div class="field">
+        <label>Leverage</label>
+        <div class="seg full" id="levSeg"><button data-l="1" class="active">1x</button><button data-l="2">2x</button><button data-l="5">5x</button><button data-l="10">10x</button></div>
+      </div>
+      <div class="field two">
+        <div>
+          <label>Stop loss <span class="pctlbl" id="slPct"></span></label>
+          <input id="slInput" type="number" step="any" placeholder="price" class="num">
+          <button class="link-btn" data-place="sl">Set on chart</button>
+        </div>
+        <div>
+          <label>Take profit <span class="pctlbl" id="tpPct"></span></label>
+          <input id="tpInput" type="number" step="any" placeholder="price" class="num">
+          <button class="link-btn" data-place="tp">Set on chart</button>
+        </div>
+      </div>
+      <div class="order-summary" id="orderSummary"></div>
+      <div class="side-btns">
+        <button class="btn long" id="longBtn"><span>LONG</span><small>bet it goes up &middot; B</small></button>
+        <button class="btn short" id="shortBtn"><span>SHORT</span><small>bet it goes down &middot; S</small></button>
+      </div>
+      <p class="muted tiny" id="orderNote"></p>
+    </aside>
+  </main>
+
+  <!-- ======================================================== PORTFOLIO -->
+  <main class="view" id="view-portfolio">
+    <div class="grid-cards" id="pfCards"></div>
+    <div class="panel pad"><h3>Allocation</h3><div class="alloc" id="pfAlloc"></div><div class="alloc-legend" id="pfLegend"></div></div>
+    <div class="panel pad"><h3>Open positions</h3><div id="pfPositions"></div></div>
+    <div class="panel pad"><h3>Queued orders <span class="muted small">(fill at the next market open)</span></h3><div id="pfOrders"></div></div>
+    <div class="panel pad"><h3>Activity</h3><div id="pfEvents" class="events"></div></div>
+  </main>
+
+  <!-- ======================================================== BOTS -->
+  <main class="view" id="view-bots">
+    <div id="botsLocked"></div>
+    <div class="panel pad"><h3>Bot shop</h3><p class="muted">Bots trade automatically with their own budget, even while the game is closed. Selling a bot refunds its cash plus half its price.</p><div class="shop" id="botShop"></div></div>
+    <div class="panel pad"><h3>My bots</h3><div id="myBots"></div></div>
+    <div class="panel pad"><h3>Bot activity</h3><div id="botLog" class="events"></div></div>
+  </main>
+
+  <!-- ======================================================== FUNDS -->
+  <main class="view" id="view-funds">
+    <div id="fundsLocked"></div>
+    <div class="panel pad">
+      <h3>Build a fund</h3>
+      <p class="muted">Make your own ETF-style basket. Weights are normalized automatically.</p>
+      <div class="fund-builder">
+        <div class="field"><label>Fund name</label><input id="fundName" placeholder="Tech + Crypto Blend" maxlength="40"></div>
+        <div id="fundRows"></div>
+        <div class="row gap"><button class="btn ghost" id="fundAddRow">+ Add holding</button>
+          <div class="field inline"><label>Invest now ($)</label><input id="fundInvest" type="number" min="0" placeholder="1000" class="num"></div>
+          <button class="btn primary" id="fundCreate">Create fund</button></div>
+      </div>
+    </div>
+    <div class="panel pad"><h3>My funds</h3><div id="myFunds"></div></div>
+  </main>
+
+  <!-- ======================================================== LEARN -->
+  <main class="view" id="view-learn">
+    <div class="disclaimer">Virtual money only. Ticker Tycoon is an educational game and nothing in it is financial advice.</div>
+    <div class="learn-grid">
+      <aside class="panel pad learn-side">
+        <div class="learn-progress"><div class="row between"><b>Your path</b><span class="muted small" id="lpText">0 / 11</span></div><div class="bar"><i id="lpBar"></i></div></div>
+        <ol class="lesson-list" id="lessonList"></ol>
+        <button class="lesson-howto" id="learnTourBtn">&#9654; Interactive tutorial</button>
+        <button class="lesson-howto" id="howToBtn">How to play Ticker Tycoon</button>
+        <div class="field yt-search">
+          <label>Find videos on any topic</label>
+          <div class="row gap"><input id="ytQuery" placeholder="e.g. what is a short squeeze"><button class="btn primary" id="ytGo">Search</button></div>
+        </div>
+      </aside>
+      <section class="panel pad learn-main" id="learnMain"></section>
+    </div>
+  </main>
+
+  <!-- ======================================================== STATS -->
+  <main class="view" id="view-stats">
+    <div class="panel pad"><div class="row between"><h3>Net worth</h3><span class="muted small" id="nwRange"></span></div><div id="nwChart" class="nw-chart"></div></div>
+    <div class="grid-cards" id="stCards"></div>
+    <div class="two-col">
+      <div class="panel pad"><h3>Achievements</h3><div class="ach-grid" id="achGrid"></div></div>
+      <div class="panel pad"><h3>Recent trades</h3><div id="stTrades"></div></div>
+    </div>
+    <div class="panel pad"><div class="row between"><h3>Leaderboard</h3><span class="muted small" id="lbInfo"></span></div><div id="leaderboard"></div></div>
+  </main>
+
+  <!-- ======================================================== SETTINGS -->
+  <main class="view" id="view-settings">
+    <div class="two-col">
+      <div class="panel pad">
+        <h3>Market hours</h3>
+        <div class="toggle-row">
+          <div><b>Follow real market hours</b>
+            <div class="muted small">On: stocks trade 9:30am-4:00pm New York time on weekdays, like a real broker; orders placed while closed wait for the open.
+              Off: stocks trade any time at their latest real price. Crypto always trades 24/7.</div></div>
+          <label class="switch"><input type="checkbox" id="hoursToggle"><span></span></label>
+        </div>
+        <h3 class="mt">Account</h3>
+        <div class="status-row"><span>Logged in as</span><b id="setUser">-</b></div>
+        <div class="field mt"><label>Change password</label>
+          <div class="row gap"><input id="pwOld" type="password" placeholder="Current password" autocomplete="current-password">
+            <input id="pwNew" type="password" placeholder="New password" autocomplete="new-password">
+            <button class="btn ghost" id="pwBtn">Change</button></div></div>
+        <button class="btn ghost mt" id="logoutBtn2">Log out</button>
+        <div id="adminBox" class="hidden">
+          <h3 class="mt">API keys <span class="tag">admin</span></h3>
+          <div id="keyStatus"></div>
+          <h3 class="mt">Data sources <span class="tag">admin</span></h3>
+          <div id="srcStatus"></div>
+          <button class="btn ghost mt" id="refreshSyms">Refresh symbol lists now</button>
+        </div>
+      </div>
+      <div class="panel pad">
+        <h3>Keyboard shortcuts</h3>
+        <div id="kbList" class="kb-list"></div>
+        <h3 class="mt">Reset my account</h3>
+        <p class="muted">Start over with $10,000: wipes your cash, positions, bots, funds and history. Your XP, rank and lessons are kept.</p>
+        <div class="row gap"><input id="resetConfirm" placeholder="Type RESET"><button class="btn danger" id="resetBtn">Reset my account</button></div>
+        <h3 class="mt">About</h3>
+        <p class="muted">Ticker Tycoon uses real symbols and prices from NASDAQ Trader, Yahoo Finance (yfinance), CoinGecko and optional Finnhub. Prices may be delayed. Virtual money only, for learning and fun. Not financial advice.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================================================== overlays -->
+<div class="drawer" id="newsDrawer">
+  <div class="drawer-head">
+    <div class="seg" id="newsSeg"><button data-n="news" class="active">News</button><button data-n="codes">Codes</button></div>
+    <button class="icon-btn" data-close="newsDrawer">&times;</button>
+  </div>
+  <div class="drawer-body" id="newsBody"></div>
+</div>
+<div class="modal-back hidden" id="modalBack"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+<div class="tour hidden" id="tour"><div class="tour-spot" id="tourSpot"></div><div class="tour-card" id="tourCard"></div></div>
+</body>
+<script src="/static/app.js"></script>
+</html>

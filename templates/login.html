@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticker Tycoon · Log in</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; overflow: auto;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(10,132,255,.18), transparent 60%),
+                  radial-gradient(900px 500px at 110% 110%, rgba(48,209,88,.12), transparent 60%), var(--bg); }
+    .auth { width: 400px; max-width: calc(100vw - 32px); }
+    .auth-brand { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: var(--s5); }
+    .auth-brand img { width: 48px; height: 48px; }
+    .auth-brand div { font-size: 26px; letter-spacing: -.02em; }
+    .auth-card { background: var(--surface); border: 1px solid var(--line-2); border-radius: 18px; padding: var(--s5);
+      box-shadow: 0 30px 80px rgba(0,0,0,.5); animation: pop .3s var(--ease); }
+    .auth-card .seg { margin-bottom: var(--s4); }
+    .auth-card .field { margin-bottom: var(--s3); }
+    .auth-card .btn { width: 100%; padding: 12px; font-size: 15px; margin-top: var(--s2); }
+    .auth-err { color: var(--red); font-size: 13px; min-height: 18px; margin-top: var(--s2); }
+    .auth-foot { text-align: center; color: var(--text-3); font-size: 12px; margin-top: var(--s4); line-height: 1.6; }
+    .ticker-strip { display: flex; gap: var(--s4); justify-content: center; margin-bottom: var(--s4); font-size: 12px; color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <div class="auth">
+    <div class="auth-brand"><img src="/static/logo.svg" alt=""><div>Ticker <b>Tycoon</b></div></div>
+    <div class="ticker-strip"><span>Real stocks</span><span>&middot;</span><span>Real crypto</span><span>&middot;</span><span>Live prices</span><span>&middot;</span><span>Virtual money</span></div>
+    <div class="auth-card">
+      <div class="seg full" id="authSeg"><button data-m="login" class="active">Log in</button><button data-m="signup">Create account</button></div>
+      <form id="authForm" autocomplete="on">
+        <div class="field"><label for="u">Username</label>
+          <input id="u" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required minlength="3" maxlength="20" placeholder="your_name"></div>
+        <div class="field"><label for="p">Password</label>
+          <input id="p" name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="at least 6 characters"></div>
+        <div class="field hidden" id="p2wrap"><label for="p2">Repeat password</label>
+          <input id="p2" type="password" autocomplete="new-password" minlength="6"></div>
+        <button class="btn primary" id="go" type="submit">Log in</button>
+        <div class="auth-err" id="err"></div>
+      </form>
+    </div>
+    <div class="auth-foot">Everyone gets their own account with $10,000 of virtual cash.<br>
+      Log in from any computer to pick up where you left off.<br>Virtual money only &middot; educational game &middot; not financial advice.</div>
+  </div>
+<script>
+  let mode = 'login';
+  const $ = (s) => document.querySelector(s);
+  document.querySelectorAll('#authSeg button').forEach((b) => b.addEventListener('click', () => {
+    mode = b.dataset.m;
+    document.querySelectorAll('#authSeg button').forEach((x) => x.classList.toggle('active', x === b));
+    $('#p2wrap').classList.toggle('hidden', mode !== 'signup');
+    $('#p').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
+    $('#go').textContent = mode === 'signup' ? 'Create account' : 'Log in';
+    $('#err').textContent = '';
+    $('#u').focus();
+  }));
+  $('#authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('#err').textContent = '';
+    if (mode === 'signup' && $('#p').value !== $('#p2').value) { $('#err').textContent = 'Passwords don’t match'; return; }
+    $('#go').disabled = true;
+    try {
+      const r = await fetch('/api/auth/' + mode, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: $('#u').value.trim(), password: $('#p').value }) });
+      const js = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(js.error || 'Something went wrong');
+      if (mode === 'signup') try { localStorage.removeItem('tt_seen:' + $('#u').value.trim().toLowerCase()); } catch (_) {}
+      location.href = '/';
+    } catch (err) { $('#err').textContent = err.message; }
+    $('#go').disabled = false;
+  });
+  $('#u').focus();
+</script>
+</body>
+</html>
